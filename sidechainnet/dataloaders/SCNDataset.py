@@ -146,6 +146,8 @@ class SCNProtein(object):
         self.atoms_per_res = NUM_COORDS_PER_RES
         self.hcoords = None  # Coordinates with hydrogen atoms
         self._has_hydrogens = False
+        self.distances = None
+        self.orientations = None
 
     def __len__(self):
         """Return length of protein sequence."""
@@ -170,6 +172,13 @@ class SCNProtein(object):
             else:
                 self.sb = sidechainnet.StructureBuilder(self.seq, self.coords)
         return self.sb.to_pdb(path, title)
+
+    def calculate_distances(self):
+        self.distances = torch.zeros((self.coords.shape[0], 4, 1) , dtype=float)
+        for j,icoor in enumerate([0, 1, 2, 4]):
+            dvec_left = self.coords[:, icoor, :].unsqueeze(0).expand(self.coords.shape[0], -1, -1)
+            dvec_left = self.coords[:, icoor, :].unsqueeze(1).expand(-1, self.coords.shape[0], -1)
+            self.distances[:, j, 3] = (dvec_left - dvec_right).norm(dim=-1)
 
     @property
     def num_missing(self):
