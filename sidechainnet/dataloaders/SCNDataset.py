@@ -178,7 +178,7 @@ class SCNProtein(object):
 
     def calculate_distances(self):
         # Convert coords from N*atoms, 3 to N, atoms, 3
-        split_coords = self.coords.reshape(-1, 14, 3)
+        split_coords = self.coords.reshape(-1, self.atoms_per_res, 3)
         self.distances = np.zeros((4, split_coords.shape[0], split_coords.shape[0]) , dtype=float)
         # extract distances for Ca, N, C, Cb
         for j, icoor in enumerate([0, 1, 2, 4]):
