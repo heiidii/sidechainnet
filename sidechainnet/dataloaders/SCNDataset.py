@@ -34,6 +34,7 @@ import sidechainnet.structure.HydrogenBuilder as hy
 from sidechainnet import structure
 from sidechainnet.structure.build_info import NUM_COORDS_PER_RES
 from sidechainnet.utils.sequence import ONE_TO_THREE_LETTER_MAP
+import numpy as np
 
 
 class SCNDataset(object):
@@ -148,6 +149,8 @@ class SCNProtein(object):
         self._has_hydrogens = False
         self.distances = None
         self.orientations = None
+        #generate distances
+        self.calculate_distances()
 
     def __len__(self):
         """Return length of protein sequence."""
@@ -174,11 +177,15 @@ class SCNProtein(object):
         return self.sb.to_pdb(path, title)
 
     def calculate_distances(self):
-        self.distances = torch.zeros((self.coords.shape[0], 4, 1) , dtype=float)
-        for j,icoor in enumerate([0, 1, 2, 4]):
-            dvec_left = self.coords[:, icoor, :].unsqueeze(0).expand(self.coords.shape[0], -1, -1)
-            dvec_left = self.coords[:, icoor, :].unsqueeze(1).expand(-1, self.coords.shape[0], -1)
-            self.distances[:, j, 3] = (dvec_left - dvec_right).norm(dim=-1)
+        # Convert coords from N*atoms, 3 to N, atoms, 3
+        split_coords = self.coords.reshape(-1, 14, 3)
+        self.distances = np.zeros((4, split_coords.shape[0], split_coords.shape[0]) , dtype=float)
+        # extract distances for Ca, N, C, Cb
+        for j, icoor in enumerate([0, 1, 2, 4]):
+            coords = split_coords[:, icoor, :]
+            dvec_left = np.expand_dims(coords, 0)
+            dvec_right = np.expand_dims(coords, 1)
+            self.distances[j, :, :] = np.linalg.norm(dvec_left - dvec_right, axis=2)
 
     @property
     def num_missing(self):
