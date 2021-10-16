@@ -20,7 +20,8 @@ EMPTY_SPLIT_DICT = {
     "sec": [],
     "res": [],
     "ums": [],
-    "mod": []
+    "mod": [],
+    "dist": []
 }
 
 

@@ -149,8 +149,7 @@ class SCNProtein(object):
         self._has_hydrogens = False
         self.distances = None
         self.orientations = None
-        #generate distances
-        self.calculate_distances()
+
 
     def __len__(self):
         """Return length of protein sequence."""
@@ -179,13 +178,13 @@ class SCNProtein(object):
     def calculate_distances(self):
         # Convert coords from N*atoms, 3 to N, atoms, 3
         split_coords = self.coords.reshape(-1, self.atoms_per_res, 3)
-        self.distances = np.zeros((4, split_coords.shape[0], split_coords.shape[0]) , dtype=float)
+        self.distances = np.zeros((split_coords.shape[0], split_coords.shape[0], 4) , dtype=float)
         # extract distances for Ca, N, C, Cb
         for j, icoor in enumerate([0, 1, 2, 4]):
             coords = split_coords[:, icoor, :]
             dvec_left = np.expand_dims(coords, 0)
             dvec_right = np.expand_dims(coords, 1)
-            self.distances[j, :, :] = np.linalg.norm(dvec_left - dvec_right, axis=2)
+            self.distances[:, :, j] = np.linalg.norm(dvec_left - dvec_right, axis=2)
 
     @property
     def num_missing(self):

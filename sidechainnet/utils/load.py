@@ -258,6 +258,7 @@ def load(casp_version=12,
             print(f"SidechainNet{(casp_version, thinning)} was not found in {scn_dir}.")
     if not local_path or force_download:
         # Download SidechainNet if it does not exist locally, or if requested
+        print("Downloading ...")
         local_path = _download_sidechainnet(casp_version, thinning, scn_dir)
 
     scn_dict = _load_dict(local_path)

@@ -15,7 +15,8 @@ from sidechainnet.utils.download import MAX_SEQ_LEN
 Batch = collections.namedtuple("Batch",
                                "pids seqs msks evos secs angs "
                                "crds int_seqs seq_evo_sec resolutions is_modified "
-                               "lengths str_seqs")
+                               "lengths str_seqs"
+                               )
 
 
 def get_collate_fn(aggregate_input, seqs_as_onehot=None):
@@ -84,6 +85,8 @@ def get_collate_fn(aggregate_input, seqs_as_onehot=None):
         padded_angs = pad_for_batch(angles, max_batch_len, 'ang')
         padded_crds = pad_for_batch(coords, max_batch_len, 'crd')
         padded_mods = pad_for_batch(mods, max_batch_len, 'msk')
+        #padded_dist = pad_for_batch(dist, max_batch_len, 'dist')
+        #print(padded_dist.shape)
 
         # Non-aggregated model input
         if not aggregate_input:
@@ -99,7 +102,8 @@ def get_collate_fn(aggregate_input, seqs_as_onehot=None):
                          resolutions=resolutions,
                          is_modified=padded_mods,
                          lengths=lengths,
-                         str_seqs=str_seqs)
+                         str_seqs=str_seqs)#,
+                         #dist=padded_dist)
 
         # Aggregated model input
         elif aggregate_input:
@@ -184,6 +188,15 @@ def pad_for_batch(items, batch_length, dtype="", seqs_as_onehot=False, vocab=Non
         for item in items:
             z = np.zeros((batch_length * NUM_COORDS_PER_RES - len(item), item.shape[-1]))
             c = np.concatenate((item, z), axis=0)
+            batch.append(c)
+        batch = np.array(batch)
+        # There are multiple rows per res, so we allow the coord matrix to be larger
+        batch = batch[:, :MAX_SEQ_LEN * NUM_COORDS_PER_RES]
+        batch = torch.FloatTensor(batch)
+    elif dtype == "dist":
+        for item in items:
+            ds = np.zeros((batch_length, batch_length, item.shape[0]))
+            ds[:len(item), :len(item), :] = item
             batch.append(c)
         batch = np.array(batch)
         # There are multiple rows per res, so we allow the coord matrix to be larger
